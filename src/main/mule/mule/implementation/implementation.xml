@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd
+http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd">
+	
+	
+  <flow name="chatgpt-flow" doc:id="e6041271-0da1-46d1-87e5-056bb9d3de5b" >
+    <http:listener doc:name="Listener" doc:id="147b4465-654a-478b-824d-ccfa788bc100" config-ref="HTTP_Listener_config" path="/chat"/>
+    <logger level="INFO" doc:name="Start Logger" doc:id="97ec334c-2e7a-401c-8147-9ed5f43088b0" message="#['Call openAPI and pass desired input']"/>
+   <ee:transform doc:name="request-payload" doc:id="1a730c68-8054-43bb-b2e3-ad468f85e0ed" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "model": "gpt-3.5-turbo",
+    "max_tokens": 128, //optional by default openAPI uses 2048 token
+    "n": 3,
+    "messages": [
+        {
+            "role": "user",
+            "content": payload.query
+        }
+    ]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform> 
+		<http:request method="POST" doc:name="ChatGPT  Request" doc:id="6b88536b-ef44-4841-8101-032e8ce256f1" config-ref="HTTP_Request_configuration" path="/v1/chat/completions"/>
+    <ee:transform doc:name="response-payload" doc:id="f7a48aa9-b91f-4311-9cfa-c632e6d2792c" >
+      <ee:message >
+        <ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.choices.message.content]]></ee:set-payload>
+      </ee:message>
+    </ee:transform> 
+    <logger level="INFO" doc:name="End Logger" doc:id="5d4011d2-55c2-484c-b55c-7732fe837212" message="#[payload]"/>
+  </flow>
+
+    
+	
+	
+</mule>
